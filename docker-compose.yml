@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  edura-core:
+    build: 
+      context: ./edura_core
+    container_name: edura_app
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the frontend directory so Python can serve it
+      - ./frontend:/frontend
+      # Mount the source code for hot-reloading
+      - ./edura_core:/app
+    environment:
+      # Ensure Python prints output immediately (good for logs)
+      - PYTHONUNBUFFERED=1
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
