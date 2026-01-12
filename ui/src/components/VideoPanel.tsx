@@ -1,17 +1,19 @@
 import React, { useRef, useEffect } from 'react';
+import '../styles/VideoPanel.css';
 
 interface Props {
     stream: MediaStream | null;
     visible: boolean;
+    backgroundImageUrl?: string;
 }
 
-export const VideoPanel: React.FC<Props> = ({ stream, visible }) => {
+export const VideoPanel: React.FC<Props> = ({ stream, visible, backgroundImageUrl }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number | undefined>(undefined);
 
-    const backgroundImage = import.meta.env.VITE_BACKGROUND_IMAGE_URL || '';
+    const backgroundImage = backgroundImageUrl || import.meta.env.VITE_BACKGROUND_IMAGE_URL || '';
 
     useEffect(() => {
         const video = videoRef.current;
@@ -34,7 +36,6 @@ export const VideoPanel: React.FC<Props> = ({ stream, visible }) => {
         const renderFrame = () => {
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
                 // Determine layout
-                const videoAspect = video.videoWidth / video.videoHeight;
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
@@ -69,43 +70,24 @@ export const VideoPanel: React.FC<Props> = ({ stream, visible }) => {
     if (!visible) return null;
 
     return (
-        <div style={{ 
-            position: 'relative', 
-            width: '100%', 
-            height: '100%',
-            backgroundColor: 'black',
-            backgroundImage: `url(${backgroundImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden'
-        }}>
+        <div 
+            className="video-panel-container"
+            style={{ 
+                backgroundImage: `url(${backgroundImage})`
+            }}
+        >
              <video 
                 ref={videoRef} 
                 autoPlay 
                 playsInline 
-                style={{ display: 'none' }}
+                className="video-hidden"
              />
              <canvas 
                 ref={canvasRef}
-                style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'contain' 
-                }}
+                className="video-canvas"
              />
-             <audio ref={audioRef} autoPlay style={{ display: 'none' }} />
-             <div style={{
-                 position: 'absolute',
-                 bottom: '10px',
-                 left: '0',
-                 right: '0',
-                 textAlign: 'center',
-                 color: 'rgba(255,255,255,0.5)',
-                 pointerEvents: 'none'
-             }}>
+             <audio ref={audioRef} autoPlay className="video-hidden" />
+             <div className="video-overlay">
                 {/* Overlay area for subtitles or status if needed */}
              </div>
         </div>

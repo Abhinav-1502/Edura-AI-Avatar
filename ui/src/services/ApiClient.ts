@@ -33,25 +33,65 @@ class ApiClientService {
     private BASE_URL = import.meta.env.BACKEND_URL || 'http://localhost:8000'; // Or set to window.location.origin if needed
 
     async getHeyGenToken(): Promise<string> {
-        // Assuming BASE_URL is meant to be empty or the host is implied by the relative path.
-        // If BASE_URL is truly needed, it should be initialized appropriately.
-        // For consistency with other relative paths, let's assume it should be `/api/heygen/token` directly.
-        // However, strictly following the provided snippet, it uses `this.BASE_URL`.
-        // If `this.BASE_URL` is not explicitly defined elsewhere, it would be `undefined`.
-        // To make the provided snippet syntactically correct and functional,
-        // I will assume `this.BASE_URL` should be an empty string or removed if the path is relative.
-        // Given the other methods use relative paths, I will adjust the fetch call to be relative.
         const response = await fetch(`${this.BASE_URL}/api/heygen/token`, { method: 'POST' });
         if (!response.ok) throw new Error('Failed to get HeyGen token');
         const json = await response.json();
         return json.data.token;
     }
 
+    async getHeyGenAvatarList(): Promise<any> {
+        const response = await fetch(`${this.BASE_URL}/api/heygen/avatar_list`);
+        if (!response.ok) throw new Error('Failed to get HeyGen avatar list');
+        const json = await response.json();
+        return json.data;
+    }
 
+    async getHeyGenCredits(): Promise<any> {
+        const response = await fetch(`${this.BASE_URL}/api/heygen/available_credits`);
+        if (!response.ok) throw new Error('Failed to get HeyGen available credits');
+        const json = await response.json();
+        localStorage.setItem('heygen_credits', json.data.remaining_quota);
+        return json.data;
+    }
+
+    async stopAllActiveSession(): Promise<any> {
+        const response = await fetch(`${this.BASE_URL}/api/heygen/stop_all_sessions`, { method: 'POST' });
+        if (!response.ok) throw new Error('Failed to stop all active sessions');
+        const json = await response.json();
+        return json.data;
+    }
+
+    async uploadBackgroundImage(file: File): Promise<string> {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`${this.BASE_URL}/api/config/upload_background`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) throw new Error('Failed to upload background image');
+        const json = await response.json();
+        return json.url;
+    }
+
+
+
+    async getBackgroundUrl(): Promise<string | null> {
+        try {
+            const response = await fetch(`${this.BASE_URL}/api/config/background`);
+            if (!response.ok) return null;
+            const json = await response.json();
+            return json.url ? `${this.BASE_URL}${json.url}` : null;
+        } catch (error) {
+            console.error("Failed to fetch background url:", error);
+            return null;
+        }
+    }
 
     async getSystemPrompt(): Promise<string> {
         try {
-            const response = await fetch('/api/get-system-prompt');
+            const response = await fetch(`${this.BASE_URL}/api/get-system-prompt`);
             const data = await response.json();
             return data.systemPrompt;
         } catch (error) {
@@ -61,25 +101,26 @@ class ApiClientService {
     }
 
     async getTopics(): Promise<Topic[]> {
-        const response = await fetch('/api/topics');
+        const response = await fetch(`${this.BASE_URL}/api/topics`);
         if (!response.ok) throw new Error('Failed to fetch topics');
         return response.json();
     }
 
     async getTopicDetails(topicId: string): Promise<Topic> {
-         const response = await fetch(`/api/topics/${topicId}`);
+         const response = await fetch(`${this.BASE_URL}/api/topics/${topicId}`);
          if (!response.ok) throw new Error('Failed to fetch topic details');
          return response.json();
     }
 
     async getSession(): Promise<Session> {
-        const response = await fetch(`/api/session?_=${new Date().getTime()}`);
+        console.log(this.BASE_URL);
+        const response = await fetch(`${this.BASE_URL}/api/session?_=${new Date().getTime()}`);
         if (!response.ok) throw new Error('Failed to fetch session');
         return response.json();
     }
 
     async sendChatRequest(messages: Message[], dataSources: any[], oydEnabled: boolean): Promise<Response> {
-        const url = '/api/chat';
+        const url = `${this.BASE_URL}/api/chat`;
         const body = JSON.stringify({ messages, useSearch: oydEnabled, dataSources: oydEnabled ? dataSources : [] });
         
         return await fetch(url, {

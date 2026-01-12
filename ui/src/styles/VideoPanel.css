@@ -1,0 +1,34 @@
+.video-panel-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: beige;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.video-hidden {
+    display: none;
+}
+
+.video-canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.video-overlay {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+}

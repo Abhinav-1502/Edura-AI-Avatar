@@ -1,0 +1,19 @@
+.controls-container {
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.btn-mic-active {
+    background-color: #ef4444;
+}
+
+.btn-clear {
+    background: #f59e0b;
+}
+
+.btn-close {
+    background: #ef4444;
+}

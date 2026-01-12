@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import type { Message } from '../services/ApiClient';
+import '../styles/ChatOverlay.css';
 
 interface Props {
     messages: Message[];
@@ -19,27 +20,15 @@ export const ChatOverlay: React.FC<Props> = ({ messages, hidden }) => {
 
     return (
         <div 
-            className="glass-panel"
+            className="glass-panel chat-overlay-container"
             ref={scrollRef}
-            style={{ 
-                position: 'absolute', 
-                top: '20px', 
-                left: '20px', 
-                width: '300px', 
-                height: '400px', 
-                overflowY: 'auto',
-                padding: '15px',
-                zIndex: 10,
-                fontSize: '0.9rem',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)'
-            }}
         >
             {messages.map((msg, idx) => (
-                <div key={idx} style={{ marginBottom: '10px' }}>
-                    <strong style={{ color: msg.role === 'user' ? '#50E6FF' : '#FFD700' }}>
+                <div key={idx} className="chat-message">
+                    <strong className={`chat-role ${msg.role === 'user' ? 'chat-role-user' : 'chat-role-assistant'}`}>
                         {msg.role === 'user' ? 'User' : 'Assistant'}:
                     </strong>
-                    <div style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                    <div className="chat-content">{msg.content}</div>
                 </div>
             ))}
         </div>

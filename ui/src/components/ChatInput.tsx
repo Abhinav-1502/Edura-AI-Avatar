@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 
+import '../styles/ChatInput.css';
+
 interface Props {
     onSend: (text: string) => void;
     disabled?: boolean;
+    value?: string;
+    onChange?: (text: string) => void;
 }
 
-export const ChatInput: React.FC<Props> = ({ onSend, disabled }) => {
-    const [text, setText] = useState('');
+export const ChatInput: React.FC<Props> = ({ onSend, disabled, value, onChange }) => {
+    const [internalText, setInternalText] = useState('');
+
+    const text = value !== undefined ? value : internalText;
+    const setText = onChange || setInternalText;
 
     const handleSend = () => {
         if (!text.trim()) return;
         onSend(text);
-        setText('');
+        if (value === undefined) {
+             setInternalText('');
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -24,10 +33,9 @@ export const ChatInput: React.FC<Props> = ({ onSend, disabled }) => {
     if (disabled) return null;
 
     return (
-        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+        <div className="chat-input-container">
             <textarea
-                className="input-field"
-                style={{ flex: 1, height: '60px', resize: 'none' }}
+                className="input-field chat-input-textarea"
                 placeholder="Type your message..."
                 value={text}
                 onChange={e => setText(e.target.value)}
@@ -35,10 +43,9 @@ export const ChatInput: React.FC<Props> = ({ onSend, disabled }) => {
                 disabled={disabled}
             />
             <button 
-                className="btn-primary" 
+                className="btn-primary chat-input-button" 
                 onClick={handleSend}
                 disabled={disabled || !text.trim()}
-                style={{ height: '60px' }}
             >
                 Send
             </button>

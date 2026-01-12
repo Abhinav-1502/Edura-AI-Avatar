@@ -1,0 +1,15 @@
+.chat-input-container {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input-textarea {
+    flex: 1;
+    height: 60px;
+    resize: none;
+}
+
+.chat-input-button {
+    height: 60px;
+}

@@ -13,7 +13,7 @@ export type ActionTypeEnum = typeof ActionType[keyof typeof ActionType];
 export interface LessonAction {
     id: string;
     type: ActionTypeEnum;
-    payload: string; 
+    payload: string;
     originalNodeId: number;
     originalPart: SessionPart;
 }
@@ -184,7 +184,7 @@ export const useLessonEngine = ({
         if (currentNodeIndex === -1) return [];
 
         const start = Math.max(0, currentNodeIndex - 4);
-        const end = Math.min(script.length, currentNodeIndex + 5); // +5 because slice is exclusive
+        const end = Math.min(script.length, currentNodeIndex + 3); // +5 because slice is exclusive
 
         return script.slice(start, end);
     }, [actions, currentIndex, script]);

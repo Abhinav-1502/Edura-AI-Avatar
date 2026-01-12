@@ -1,0 +1,126 @@
+.session-player-container {
+    display: grid;
+    gap: 20px;
+    align-items: start;
+    height: calc(100vh - 100px);
+}
+
+.session-active-grid {
+    grid-template-columns: 2fr 1fr;
+}
+
+.session-inactive-grid {
+    grid-template-columns: 1fr;
+}
+
+.player-left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+}
+
+.video-display-area {
+    position: relative;
+    flex: 1;
+    background-color: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    min-height: 400px;
+}
+
+.avatar-layer {
+    height: 100%;
+}
+
+.video-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+}
+
+.controls-wrapper {
+    padding: 20px;
+}
+
+.action-buttons {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-action {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+}
+
+.btn-continue {
+    background: #10b981;
+}
+
+.btn-interrupt {
+    background: #64748b;
+}
+
+.btn-skip {
+    background: #3b82f6;
+}
+
+.script-panel {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.session-script-title {
+    margin-bottom: 15px;
+}
+
+.script-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.script-item {
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.script-item-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.script-item-inactive {
+    background-color: transparent;
+}
+
+.script-item-header {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #aaa;
+    margin-bottom: 4px;
+}
+
+.script-content {
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.script-content-active {
+    color: #fff;
+}
+
+.script-intro {
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 4px;
+    font-style: italic;
+}

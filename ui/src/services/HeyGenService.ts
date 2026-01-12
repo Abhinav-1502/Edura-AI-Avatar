@@ -5,6 +5,7 @@ import StreamingAvatar, {
     type StartAvatarRequest,
 } from "@heygen/streaming-avatar";
 
+
 export interface HeyGenConfig {
     quality?: AvatarQuality;
     knowledgeId?: string;
@@ -13,7 +14,8 @@ export interface HeyGenConfig {
 
 export class HeyGenService {
     private avatar: StreamingAvatar | null = null;
-    private sessionData: any = null;
+    
+    // private sessionData: any = null;
     
     // Callbacks
     public onAvatarStartTalking?: (headId: number) => void;
@@ -68,10 +70,12 @@ export class HeyGenService {
 
     async startSession(config: StartAvatarRequest): Promise<void> {
         if (!this.avatar) throw new Error("HeyGenService not initialized");
-        
-        this.sessionData = await this.avatar.createStartAvatar(config);
-
-
+        try {
+            await this.avatar.createStartAvatar(config);
+        } catch (e) {
+            console.error("Failed to start avatar:", e);
+            throw e;
+        }
     }
 
     async speak(text: string, taskType: TaskType = TaskType.REPEAT): Promise<void> {
@@ -80,17 +84,17 @@ export class HeyGenService {
     }
 
     async stopSpeaking(): Promise<void> {
-         if (!this.avatar) return;
+         if (!this.avatar) throw new Error("[HeyGenService] onStopSpeaking: HeyGenService not initialized");
          await this.avatar.interrupt();
     }
 
     async startListening(): Promise<void> {
-        if (!this.avatar) return;
+        if (!this.avatar) throw new Error("[HeyGenService] onStartListening: HeyGenService not initialized");
         await this.avatar.startVoiceChat();
     }
 
     async stopListening(): Promise<void> {
-        if (!this.avatar) return;
+        if (!this.avatar) throw new Error("[HeyGenService] onStopListening: HeyGenService not initialized");
         await this.avatar.closeVoiceChat();
     }
 
@@ -100,4 +104,6 @@ export class HeyGenService {
             this.avatar = null;
         }
     }
+
+
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/Controls.css';
 
 interface Props {
     sessionActive: boolean;
@@ -18,20 +19,23 @@ export const Controls: React.FC<Props> = ({
     onClearChat 
 }) => {
     return (
-        <div className="glass-panel" style={{ padding: '15px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="glass-panel controls-container">
             {!sessionActive ? (
                 <button className="btn-primary" onClick={onStartSession}>
                     Open Avatar Session
                 </button>
             ) : (
                 <>
-                    <button className="btn-primary" onClick={onMicToggle} style={{ backgroundColor: isListening ? '#ef4444' : undefined }}>
+                    <button 
+                        className={`btn-primary ${isListening ? 'btn-mic-active' : ''}`} 
+                        onClick={onMicToggle}
+                    >
                         {isListening ? 'Stop Microphone' : 'Start Microphone'}
                     </button>
-                    <button className="btn-primary" style={{ background: '#f59e0b' }} onClick={onClearChat}>
+                    <button className="btn-primary btn-clear" onClick={onClearChat}>
                         Clear History
                     </button>
-                    <button className="btn-primary" style={{ background: '#ef4444' }} onClick={onStopSession}>
+                    <button className="btn-primary btn-close" onClick={onStopSession}>
                         Close Session
                     </button>
                 </>
