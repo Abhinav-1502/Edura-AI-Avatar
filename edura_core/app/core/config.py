@@ -10,6 +10,9 @@ class Settings:
     
     OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-nano")
     
+    HW_API_KEY = os.getenv("HW_SERVER_API_KEY")
+    HW_API_URL = os.getenv("HW_API_URL")
 
 
 settings = Settings()
+

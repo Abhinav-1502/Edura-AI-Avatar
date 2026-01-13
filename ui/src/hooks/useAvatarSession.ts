@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback } from 'react';
 import { HeyGenService } from '../services/HeyGenService';
 import { ApiClient } from '../services/ApiClient';

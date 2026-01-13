@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from app.routers import chat, prompts, topics, session, config, heygen
+from app.routers import chat, prompts, topics, sessions, config, heygen, history
 
 app = FastAPI()
 
@@ -20,9 +20,10 @@ app.add_middleware(
 app.include_router(chat.router, prefix="/api", tags=["Chat"])
 app.include_router(prompts.router, prefix="/api", tags=["System"])
 app.include_router(topics.router, prefix="/api", tags=["Topics"])
-app.include_router(session.router, prefix="/api", tags=["Session"])
+app.include_router(sessions.router, prefix="/api", tags=["Sessions"])
 app.include_router(heygen.router, prefix="/api", tags=["HeyGen"])
 app.include_router(config.router, prefix="/api", tags=["Config"])
+app.include_router(history.router, prefix="/api", tags=["History"])
 
 # Mount the data directory to serve videos and other media
 app.mount("/api/media", StaticFiles(directory="app/data"), name="media")

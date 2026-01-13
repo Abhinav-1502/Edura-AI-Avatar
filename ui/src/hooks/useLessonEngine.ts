@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { SessionPart } from '../types/session';
 import { HeyGenService } from '../services/HeyGenService';
@@ -25,6 +26,7 @@ export const LessonState = {
     ANSWERING: 'ANSWERING',
     ANSWER_COMPLETE: 'ANSWER_COMPLETE',
     PAUSED_FOR_QA: 'PAUSED_FOR_QA',
+    PAUSED: 'PAUSED',
     COMPLETED: 'COMPLETED'
 } as const;
 
@@ -55,7 +57,6 @@ const flattenScript = (nodes: SessionPart[]): LessonAction[] => {
 interface UseLessonEngineProps {
     script: SessionPart[];
     avatarService: HeyGenService | null;
-    voiceName: string;
     onVideoPlay: (path: string) => void;
     onScriptComplete?: () => void;
 }
@@ -63,7 +64,6 @@ interface UseLessonEngineProps {
 export const useLessonEngine = ({
     script,
     avatarService,
-    voiceName,
     onVideoPlay,
     onScriptComplete
 }: UseLessonEngineProps) => {
@@ -109,13 +109,24 @@ export const useLessonEngine = ({
              // We DO NOT advance here. We wait for onVideoEnded callback.
         }
 
-    }, [actions, currentIndex, avatarService, onVideoPlay, onScriptComplete, voiceName]);
+    }, [actions, currentIndex, avatarService, onVideoPlay, onScriptComplete]);
 
-    const startLesson = useCallback(() => {
+    const startLesson = useCallback((startActionIndex: number = 0) => {
+        console.log(`[useLessonEngine] startLesson called with startActionIndex: ${startActionIndex}`);
         setState(LessonState.RUNNING);
-        setCurrentIndex(0);
+        
+        if (startActionIndex > 0 && startActionIndex < actions.length) {
+             console.log(`[useLessonEngine] Resuming at action index: ${startActionIndex}`);
+             setCurrentIndex(startActionIndex);
+        } else {
+             if (startActionIndex >= actions.length) {
+                 console.warn(`[useLessonEngine] startActionIndex ${startActionIndex} out of bounds (max ${actions.length}). Starting at 0.`);
+             }
+             setCurrentIndex(0);
+        }
+
         executionRef.current = null;
-    }, []);
+    }, [actions]);
 
     // Trigger execution when index/state changes
     useEffect(() => {
@@ -151,11 +162,11 @@ export const useLessonEngine = ({
         }
     }, [state, actions, currentIndex, advance]);
 
-    const interrupt = useCallback(() => {
+    const interrupt = useCallback(async () => {
         // Interrupting puts us in WAITING state.
         // We stop speaking. The TalkingStopped event will fire but should be ignored by App.tsx logic because of this state.
         setState(LessonState.WAITING_FOR_INPUT);
-        avatarService?.stopSpeaking();
+        await avatarService?.stopSpeaking();
     }, [avatarService]);
 
     const skip = useCallback(() => {
@@ -193,17 +204,30 @@ export const useLessonEngine = ({
         setState(LessonState.ANSWER_COMPLETE);
     }, []);
 
+    const getStartActionIndexForPartId = useCallback((partId: number) => {
+        return actions.findIndex(a => a.originalNodeId === partId);
+    }, [actions]);
+
+    const pause = useCallback(async () => {
+        setState(LessonState.PAUSED);
+        await avatarService?.stopSpeaking();
+    }, [avatarService]);
+
     return useMemo(() => ({
         state,
         currentAction: actions[currentIndex],
+        currentPartId: actions[currentIndex]?.originalNodeId,
         startLesson,
         onAvatarSpeechEnded,
         onVideoEnded,
         interrupt,
         skip,
+        pause,
         startAnswering,
         signalAnswerComplete,
         resume,
-        getContextSlice
-    }), [state, actions, currentIndex, startLesson, onAvatarSpeechEnded, onVideoEnded, interrupt, skip, startAnswering, signalAnswerComplete, resume, getContextSlice]);
+        getContextSlice,
+        getStartActionIndexForPartId,
+        isReady: actions.length > 0
+    }), [state, actions, currentIndex, startLesson, onAvatarSpeechEnded, onVideoEnded, interrupt, skip, pause, startAnswering, signalAnswerComplete, resume, getContextSlice, getStartActionIndexForPartId]);
 };

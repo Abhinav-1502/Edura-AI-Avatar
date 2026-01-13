@@ -25,6 +25,7 @@ interface SessionPlayerProps {
     onClearChat: () => void;
     onSendMessage: (text: string) => void;
     onInterrupt: () => void;
+    onPause: () => void;
     onResume: () => void;
     onSkip: () => void;
     onVideoEnded: () => void;
@@ -47,6 +48,7 @@ export const SessionPlayer = ({
     onClearChat,
     onSendMessage,
     onInterrupt,
+    onPause,
     onResume,
     onSkip,
     onVideoEnded,
@@ -131,6 +133,23 @@ export const SessionPlayer = ({
                          >
                             Interrupt & Ask
                          </button>
+                         
+                        {lessonState === LessonState.PAUSED ? (
+                             <button 
+                                className="btn-primary btn-action btn-resume" 
+                                onClick={onResume}
+                             >
+                                Play
+                             </button>
+                         ) : (
+                             <button 
+                                className="btn-primary btn-action btn-pause" 
+                                onClick={onPause}
+                             >
+                                Pause
+                             </button>
+                         )}
+
                          <button 
                             className="btn-primary btn-action btn-skip" 
                             onClick={onSkip}

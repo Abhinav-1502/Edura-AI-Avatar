@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAvatarSession } from '../hooks/useAvatarSession';
 import { useChat } from '../hooks/useChat';
 import { ApiClient } from '../services/ApiClient';
 import { SessionPlayer } from '../components/SessionPlayer';
-import type { Session } from '../types/session'; // Note: Using existing type or need to unify with models/session
+import type { Session } from '../types/session'; 
 import { LessonState, useLessonEngine } from '../hooks/useLessonEngine';
 import '../styles/App.css';
 
@@ -30,12 +30,19 @@ const FILLER_PHRASES = [
 export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Retrieve state from navigation (set by HomePage)
+    const { resumePartId, isTracking: initialIsTracking = false } = location.state || {};
 
     // 4. Session Data State
     const [sessionData, setSessionData] = useState<Session | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [loadingSession, setLoadingSession] = useState(false);
     const [inputText, setInputText] = useState('');
+
+    const [isTracking] = useState<boolean>(initialIsTracking);
+    const [completedPartId, setCompletedPartId] = useState(resumePartId || 0);
 
     const { 
         remoteStream, 
@@ -58,26 +65,80 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
         oydEnabled: config.oydEnabled
     });
 
-    const credits: number = Number(localStorage.getItem('heygen_credits'));
+    
     // Initialize Lesson Engine with Session Script
     const lessonEngine = useLessonEngine({
         script: sessionData?.script || EMPTY_SCRIPT,
         avatarService: avatarService, 
-        voiceName: config.ttsVoice,
         onVideoPlay: async () => {
              console.log("SessionPage: Video started. Disconnecting avatar to save costs.");
              await stopSession();
         },
-        onScriptComplete: () => {
+
+        // ON Successful Lesson Completion POST HOMEWORK
+        onScriptComplete: async () => {
              console.log("Lesson Complete");
-             // Optional: Navigate to history or show summary
+             
+             // Wait briefly for UI to settle
+             await new Promise(r => setTimeout(r, 500));
+
+             const title = sessionData?.title || sessionData?.subject || "this session";
+             if (window.confirm(`Congratulations, Do you want me to post the homework for ${title}?`)) {
+                 try {
+                     if (sessionData?.id) {
+                         await ApiClient.postHomework(sessionData.id);
+                         alert("Homework posted successfully!");
+                     }
+                 } catch (e) {
+                     console.error("Failed to post homework", e);
+                     alert("Failed to post homework.");
+                 }
+             }
+             
+            navigate('/');
         }
     });
+
+    const [isPlayingResumeIntro, setIsPlayingResumeIntro] = useState(!!resumePartId);
+    const hasSpokenResumeIntro = useRef(false);
+
+    // Track completed parts based on lessonEngine actions
+    useEffect(() => {
+        if (isTracking && lessonEngine.currentPartId) {
+             setCompletedPartId(lessonEngine.currentPartId);
+        }
+    }, [isTracking, lessonEngine.currentPartId]);
+
+    // Perform Resume Intro Speech
+    useEffect(() => {
+        if (resumePartId && isPlayingResumeIntro && avatarService && remoteStream && !hasSpokenResumeIntro.current) {
+            hasSpokenResumeIntro.current = true;
+            // Delay slightly to ensure video/audio is ready
+            setTimeout(() => {
+                avatarService.speak("Welcome back. Let's continue where we left off from the last session.");
+            }, 1000);
+        }
+    }, [resumePartId, isPlayingResumeIntro, avatarService, remoteStream]);
+
+    // Trigger lesson start when sessionData is ready
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if (sessionData && lessonEngine && lessonEngine.isReady && lessonEngine.state === LessonState.IDLE && !isPlayingResumeIntro) {
+             let startActionIndex = 0;
+             if (resumePartId) {
+                 const foundIndex = lessonEngine.getStartActionIndexForPartId(resumePartId);
+                 if (foundIndex >= 0) startActionIndex = foundIndex;
+                 else console.warn("Could not find start index for Part ID:", resumePartId);
+             }
+             lessonEngine.startLesson(startActionIndex);
+        }
+    }, [sessionData, lessonEngine, resumePartId, isPlayingResumeIntro]);
 
     // Handle Interruption
     useEffect(() => {
         if (isLoading && lessonEngine.state === LessonState.RUNNING) {
-            lessonEngine.interrupt();
+             lessonEngine.interrupt();
         }
     }, [isLoading, lessonEngine.state, lessonEngine]);
 
@@ -104,13 +165,19 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
          }
 
          if (eventType === 'TalkingStopped' || eventType === 'SwitchToIdle' || eventType === 'avatar_stop_talking') {
+              if (isPlayingResumeIntro) {
+                  console.log("Resume intro finished");
+                  setIsPlayingResumeIntro(false);
+                  return;
+              }
+
               if (lessonEngine.state === LessonState.RUNNING) {
                   lessonEngine.onAvatarSpeechEnded();
               } else if (lessonEngine.state === LessonState.ANSWERING) {
                   lessonEngine.signalAnswerComplete();
               }
           }
-    }, [lessonEngine]);
+    }, [lessonEngine, isPlayingResumeIntro]);
     
     useEffect(() => {
         if (avatarService) {
@@ -132,7 +199,10 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
             }
         } else {
             // Interrupt immediately on start
-            lessonEngine.interrupt();
+            await lessonEngine.interrupt();
+            // Wait for avatar to actually stop speaking (buffer)
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             setInputText(''); // Clear previous text when starting new recording
             setIsListening(true);
             await startRecognition((text) => {
@@ -171,13 +241,15 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
         }
     };
 
-    const initializationStarted = React.useRef(false);
+    const initializationStarted = useRef(false);
 
     // Auto-start session for now logic similar to handleStartSession
     useEffect(() => {
         const initSession = async () => {
              if (initializationStarted.current) return;
              initializationStarted.current = true;
+
+             const credits = await ApiClient.getHeyGenCredits();
 
              if (credits < 1) {
                 alert('You have no credits left. Please purchase more credits to continue.');
@@ -192,14 +264,13 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
                 
                 await ApiClient.stopAllActiveSession();
                 
-                const session = await ApiClient.getSession(); 
+                if (!id) throw new Error("No Session ID provided");
+                const session = await ApiClient.getSession(id); 
                 
                 await startSession(config);
                 setSessionData(session);
                 
                 setLoadingSession(false);
-                // We don't verify strict equality with lessonEngine.startLesson() here 
-                // because lessonEngine depends on sessionData which is state.
              } catch (e) {
                  console.error("Failed to init session", e);
                  alert("[SESSION PAGE] Failed to start session");
@@ -217,14 +288,7 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
             stopSession();
         };  
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id, navigate, credits]); // Run once on mount when ID is present
-
-    // Trigger lesson start when sessionData is ready
-    useEffect(() => {
-        if (sessionData && lessonEngine && lessonEngine.state === LessonState.IDLE) {
-             lessonEngine.startLesson();
-        }
-    }, [sessionData, lessonEngine]);
+    }, [id, navigate]); // Run once on mount when ID is present
 
     // Warn before closing tab/refreshing
     useEffect(() => {
@@ -240,7 +304,23 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [remoteStream]);
 
-    const handleStopSession = () => {
+    const handleStopSession = async () => {
+        if (isTracking && sessionData) {
+            // Save History
+            try {
+                await ApiClient.saveSessionHistory({
+                    id: crypto.randomUUID(),
+                    sessionId: sessionData.id || id || 'unknown', // Use ID from session if available
+                    completedParts: completedPartId,
+                    postedHomework: false,
+                    createdAt: new Date().toISOString()
+                });
+                console.log("Session history saved");
+            } catch (e) {
+                console.error("Failed to save history", e);
+            }
+        }
+
         stopSession();
         setIsListening(false);
         navigate("/");
@@ -282,6 +362,7 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
                 onSendMessage={handleSendMessage}
                 onInterrupt={lessonEngine.interrupt}
                 onSkip={lessonEngine.skip}
+                onPause={lessonEngine.pause}
                 onResume={lessonEngine.resume}
                 onVideoEnded={handleVideoEnded}
                 backgroundImageUrl={config.backgroundImageUrl}

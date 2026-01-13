@@ -16,6 +16,14 @@ export interface ScriptNode {
     outro?: string;
 }
 
+export interface SessionHistory {
+    id: string;
+    sessionId: string;
+    completedParts: number;
+    postedHomework: boolean;
+    createdAt: string;
+}
+
 export interface Topic {
     id: string;
     title: string;
@@ -50,7 +58,6 @@ class ApiClientService {
         const response = await fetch(`${this.BASE_URL}/api/heygen/available_credits`);
         if (!response.ok) throw new Error('Failed to get HeyGen available credits');
         const json = await response.json();
-        localStorage.setItem('heygen_credits', json.data.remaining_quota);
         return json.data;
     }
 
@@ -112,13 +119,24 @@ class ApiClientService {
          return response.json();
     }
 
-    async getSession(): Promise<Session> {
-        console.log(this.BASE_URL);
-        const response = await fetch(`${this.BASE_URL}/api/session?_=${new Date().getTime()}`);
-        if (!response.ok) throw new Error('Failed to fetch session');
+    async getSessions(): Promise<any[]> {
+        const response = await fetch(`${this.BASE_URL}/api/sessions`);
+        if (!response.ok) throw new Error('Failed to fetch sessions');
         return response.json();
     }
 
+    async getSession(sessionId: string): Promise<Session> {
+        const response = await fetch(`${this.BASE_URL}/api/sessions/${sessionId}`);
+        if (!response.ok) throw new Error('Failed to fetch session');
+        return response.json();
+    }
+    async postHomework(sessionId: string): Promise<any> {
+        const response = await fetch(`${this.BASE_URL}/api/sessions/post_homework/${sessionId}`, {
+            method: 'POST'
+        });
+        if (!response.ok) throw new Error('Failed to post homework');
+        return response.json();
+    }
     async sendChatRequest(messages: Message[], dataSources: any[], oydEnabled: boolean): Promise<Response> {
         const url = `${this.BASE_URL}/api/chat`;
         const body = JSON.stringify({ messages, useSearch: oydEnabled, dataSources: oydEnabled ? dataSources : [] });
@@ -128,6 +146,27 @@ class ApiClientService {
             headers: { 'Content-Type': 'application/json' },
             body
         });
+    }
+    async saveSessionHistory(history: SessionHistory): Promise<any> {
+        const response = await fetch(`${this.BASE_URL}/api/history`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(history)
+        });
+        if (!response.ok) throw new Error('Failed to save session history');
+        return response.json();
+    }
+
+    async getSessionHistory(sessionId: string): Promise<SessionHistory[]> {
+        const response = await fetch(`${this.BASE_URL}/api/history/${sessionId}`);
+        if (!response.ok) return []; 
+        return response.json();
+    }
+
+    async getAllSessionHistory(): Promise<SessionHistory[]> {
+        const response = await fetch(`${this.BASE_URL}/api/history`);
+        if (!response.ok) return []; 
+        return response.json();
     }
 }
 

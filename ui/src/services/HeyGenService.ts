@@ -84,7 +84,10 @@ export class HeyGenService {
     }
 
     async stopSpeaking(): Promise<void> {
-         if (!this.avatar) throw new Error("[HeyGenService] onStopSpeaking: HeyGenService not initialized");
+         if (!this.avatar) {
+             console.warn("[HeyGenService] stopSpeaking called but service not initialized");
+             return;
+         }
          await this.avatar.interrupt();
     }
 

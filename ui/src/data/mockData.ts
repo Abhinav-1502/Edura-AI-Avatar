@@ -16,7 +16,7 @@ const dummyScript: SessionScript[] = [
 
 export const MOCK_SESSIONS: Session[] = [
     {
-        id: "s_001",
+        id: "preposition_1001",
         title: "Introduction to Prepositions",
         subject: "English Grammar",
         numberOfParts: 3,

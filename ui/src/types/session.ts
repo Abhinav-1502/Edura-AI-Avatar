@@ -22,5 +22,7 @@ export type SessionPart = SpeechPart | VideoPart;
 export interface Session {
     id: string;
     title: string;
+    subject?: string;
+    numberOfParts?: number;
     script: SessionPart[];
 }
