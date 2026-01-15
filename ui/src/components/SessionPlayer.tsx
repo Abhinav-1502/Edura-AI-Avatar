@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { LessonAction, LessonStateEnum } from '../hooks/useLessonEngine';
 import { ActionType, LessonState } from '../hooks/useLessonEngine';
 import { VideoPanel } from './VideoPanel';
@@ -57,7 +57,10 @@ export const SessionPlayer = ({
     onInputChange
 }: SessionPlayerProps) => {
     
+    const [isScriptVisible, setIsScriptVisible] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const scriptContainerRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     let videoSrc: string | null = null;
     if (currentAction?.type === ActionType.VIDEO) {
@@ -70,18 +73,59 @@ export const SessionPlayer = ({
 
     // Auto-scroll to current script item
     useEffect(() => {
-        if (currentAction?.originalPart?.id && scriptContainerRef.current) {
+        if (currentAction?.originalPart?.id && scriptContainerRef.current && isScriptVisible) {
             const el = document.getElementById(`script-part-${currentAction.originalPart.id}`);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
-    }, [currentAction]);
+    }, [currentAction, isScriptVisible]);
+
+    useEffect(() => {
+        const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', handleFsChange);
+        return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    }, []);
 
     const showAvatar = sessionActive && (!currentAction || currentAction.type !== ActionType.VIDEO);
 
+    const toggleScript = () => setIsScriptVisible(!isScriptVisible);
+    
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            containerRef.current?.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    };
+
     return (
-        <div className={`session-player-container ${sessionActive ? 'session-active-grid' : 'session-inactive-grid'}`}>
+        <div 
+            ref={containerRef}
+            className={`session-player-container ${sessionActive ? (isScriptVisible ? 'session-active-grid' : 'session-full-grid') : 'session-inactive-grid'} ${isFullscreen ? 'is-fullscreen' : ''}`}
+        >
+            
+            {/* Toggle Button */}
+            <div className="top-left-controls">
+                <button 
+                    className="btn-circle-control" 
+                    onClick={toggleScript}
+                    title={isScriptVisible ? "Hide Script" : "Show Script"}
+                >
+                    {isScriptVisible ? '✕' : '☰'}
+                </button>
+
+                <button 
+                    className="btn-circle-control" 
+                    onClick={toggleFullscreen}
+                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                >
+                    {isFullscreen ? '⤦' : '⤢'}
+                </button>
+            </div>
+
             <div className="player-left-col">
                 <div className="video-display-area">
                     
@@ -99,12 +143,23 @@ export const SessionPlayer = ({
                             />
                         </div>
                     )}
+
+                    {/* THINKING OVERLAY */}
+                    {isLoading && (
+                        <div className="thinking-overlay">
+                            <div className="thinking-content">
+                                <div className="thinking-spinner"></div>
+                                <div className="thinking-text">Hold on! I am thinking about your question...</div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="glass-panel controls-wrapper">
                      <Controls 
                         sessionActive={sessionActive}
                         isListening={isListening}
+                        disabled={isLoading}
                         onStartSession={onStartSession}
                         onStopSession={onStopSession}
                         onMicToggle={onMicToggle}
@@ -123,6 +178,7 @@ export const SessionPlayer = ({
                              <button 
                                 className="btn-primary btn-action btn-continue" 
                                 onClick={onResume}
+                                disabled={isLoading || isListening}
                              >
                                 Continue Lesson
                              </button>
@@ -130,14 +186,16 @@ export const SessionPlayer = ({
                          <button 
                             className="btn-primary btn-action btn-interrupt" 
                             onClick={onInterrupt}
+                            disabled={isLoading || isListening}
                          >
                             Interrupt & Ask
                          </button>
                          
-                        {lessonState === LessonState.PAUSED ? (
+                        {(lessonState === LessonState.PAUSED || lessonState === LessonState.WAITING_FOR_INPUT) ? (
                              <button 
                                 className="btn-primary btn-action btn-resume" 
                                 onClick={onResume}
+                                disabled={isLoading || isListening}
                              >
                                 Play
                              </button>
@@ -145,6 +203,7 @@ export const SessionPlayer = ({
                              <button 
                                 className="btn-primary btn-action btn-pause" 
                                 onClick={onPause}
+                                disabled={isLoading || isListening}
                              >
                                 Pause
                              </button>
@@ -153,6 +212,7 @@ export const SessionPlayer = ({
                          <button 
                             className="btn-primary btn-action btn-skip" 
                             onClick={onSkip}
+                            disabled={isLoading || isListening}
                          >
                             Skip
                          </button>
@@ -161,33 +221,35 @@ export const SessionPlayer = ({
             </div>
             
             {/* Session Script Panel */}
-             <div className="glass-panel script-panel" ref={scriptContainerRef}>
-                <h3 className="session-script-title">Session Script</h3>
-                <div className="script-list">
-                    {sessionScript?.map((part) => {
-                        const isActive = currentAction?.originalPart?.id === part.id;
-                        return (
-                            <div 
-                                key={part.id} 
-                                id={`script-part-${part.id}`}
-                                className={`script-item ${isActive ? 'script-item-active' : 'script-item-inactive'}`}
-                            >
-                                <div className="script-item-header">
-                                    {part.type.toUpperCase()} #{part.id}
-                                </div>
-                                <div className={`script-content ${isActive ? 'script-content-active' : ''}`}>
-                                    {part.type === 'speech' ? part.content : `[Video: ${part.path?.split('/').pop()}]`}
-                                </div>
-                                {part.type === 'video' && part.intro && (
-                                    <div className="script-intro">
-                                        Intro: {part.intro.substring(0, 50)}...
+            {isScriptVisible && (
+                <div className="glass-panel script-panel" ref={scriptContainerRef}>
+                    <h3 className="session-script-title">Session Script</h3>
+                    <div className="script-list">
+                        {sessionScript?.map((part) => {
+                            const isActive = currentAction?.originalPart?.id === part.id;
+                            return (
+                                <div 
+                                    key={part.id} 
+                                    id={`script-part-${part.id}`}
+                                    className={`script-item ${isActive ? 'script-item-active' : 'script-item-inactive'}`}
+                                >
+                                    <div className="script-item-header">
+                                        {part.type.toUpperCase()} #{part.id}
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                                    <div className={`script-content ${isActive ? 'script-content-active' : ''}`}>
+                                        {part.type === 'speech' ? part.content : `[Video: ${part.path?.split('/').pop()}]`}
+                                    </div>
+                                    {part.type === 'video' && part.intro && (
+                                        <div className="script-intro">
+                                            Intro: {part.intro.substring(0, 50)}...
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

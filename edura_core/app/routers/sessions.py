@@ -8,7 +8,7 @@ router = APIRouter()
 DATA_DIR = "app/data"
 SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.json")
 SESSION_CHAPTER_MAP = {
-    "preposition_1001": 1,
+    "prepositions_1001": 1,
     "nouns_1001": 2,
 }
 
@@ -79,3 +79,15 @@ async def post_homework(session_id: str):
         raise HTTPException(status_code=response.status_code, detail=response.text)
     
     return {"message": "Homework posted successfully"}
+
+
+@router.get("/check_hw")
+async def check_hw_api():
+    response = requests.get(f"{settings.HW_API_URL}/api/check_api", headers={"x-api-key": settings.HW_API_KEY})
+    
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+    
+    return response.json()
+
+    

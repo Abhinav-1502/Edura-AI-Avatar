@@ -168,6 +168,19 @@ class ApiClientService {
         if (!response.ok) return []; 
         return response.json();
     }
+
+    async login(email:string, password:string):Promise<any> {
+        const response = await fetch(`${this.BASE_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: 'Login failed' }));
+            throw new Error(error.detail || 'Login failed');
+        }
+        return response.json();
+    }
 }
 
 export const ApiClient = new ApiClientService();

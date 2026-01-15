@@ -3,6 +3,7 @@ export type SessionPartType = 'speech' | 'video';
 export interface BaseSessionPart {
     id: number;
     type: SessionPartType;
+    wait?: number;
 }
 
 export interface SpeechPart extends BaseSessionPart {

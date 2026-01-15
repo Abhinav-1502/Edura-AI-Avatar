@@ -2,7 +2,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    background-color: beige;
+    background-color: #000;
     background-size: cover;
     background-position: center;
     display: flex;
@@ -10,19 +10,15 @@
     justify-content: center;
     overflow: hidden;
 }
-
 .video-hidden {
     display: none;
 }
-
 .video-canvas {
     width: 100%;
-    height: auto;
-    aspect-ratio: 16/9;
-    max-height: 100%;
-    object-fit: contain;
+    height: 100%;
+    /* aspect-ratio: 16/9; rimuovo per permettere di riempire il box */
+    object-fit: cover;
 }
-
 .video-overlay {
     position: absolute;
     bottom: 10px;

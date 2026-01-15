@@ -8,8 +8,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Mount the frontend directory so Python can serve it
-      - ./frontend:/frontend
       # Mount the source code for hot-reloading
       - ./edura_core:/app
     environment:

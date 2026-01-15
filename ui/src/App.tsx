@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './pages/HomePage';
 import { HistoryPage } from './pages/HistoryPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { SessionPage } from './pages/SessionPage';
+import { LoginPage } from './pages/LoginPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import './styles/index.css';
 import './styles/App.css';
 
@@ -15,6 +17,16 @@ interface Config {
     continuousConversation: boolean;
     backgroundImageUrl: string;
 }
+
+// Layout component for protected routes
+const ProtectedLayout = () => (
+   <>
+      <Navbar />
+      <div className="app-container">
+         <Outlet />
+      </div>
+   </>
+);
 
 function App() {
     // Lifted Config State
@@ -29,21 +41,25 @@ function App() {
     console.log(config);
     return (
         <Router>
-            <Navbar />
-            <div className="app-container">
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route 
-                        path="/session/:id" 
-                        element={<SessionPage config={config} />} 
-                    />
-                    <Route path="/history" element={<HistoryPage />} />
-                    <Route 
-                        path="/config" 
-                        element={<ConfigPage config={config} setConfig={setConfig} />} 
-                    />
-                </Routes>
-            </div>
+            <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute />}>
+                    <Route element={<ProtectedLayout />}>
+                        <Route path="/" element={<HomePage />} />
+                        <Route 
+                            path="/session/:id" 
+                            element={<SessionPage config={config} />} 
+                        />
+                        <Route path="/history" element={<HistoryPage />} />
+                        <Route 
+                            path="/config" 
+                            element={<ConfigPage config={config} setConfig={setConfig} />} 
+                        />
+                    </Route>
+                </Route>
+            </Routes>
         </Router>
     );
 }

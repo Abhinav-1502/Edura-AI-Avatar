@@ -133,18 +133,23 @@ export const useChat = ({ onSpeak, oydEnabled }: UseChatProps) => {
                          // TTS Logic
                          if (['\n', '\n\n'].includes(token)) {
                              spokenSentence += token;
-                             if (spokenSentence.trim()) {
+                             // Don't speak on newlines alone unless it forms a sentence
+                             if (spokenSentence.trim().length > 0 && /[.?!;:]/.test(spokenSentence)) {
                                  onSpeak(spokenSentence);
+                                 spokenSentence = '';
                              }
-                             spokenSentence = '';
                          } else {
                              spokenSentence += token;
-                             const lastChar = spokenSentence.trim().slice(-1);
-                             if (sentenceLevelPunctuations.includes(lastChar)) {
-                                 if (spokenSentence.trim()) {
-                                     onSpeak(spokenSentence);
+                             // Check for sentence delimiters more aggressively
+                             if (/[.?!;:]/.test(token) || (spokenSentence.length > 50 && /[,—]/.test(token))) {
+                                 const lastChar = spokenSentence.trim().slice(-1);
+                                 // Basic heuristic: if it looks like the end of a sentence
+                                 if (sentenceLevelPunctuations.includes(lastChar)) {
+                                      if (spokenSentence.trim()) {
+                                         onSpeak(spokenSentence);
+                                         spokenSentence = '';
+                                      }
                                  }
-                                 spokenSentence = '';
                              }
                          }
                      }

@@ -4,6 +4,7 @@ import '../styles/Controls.css';
 interface Props {
     sessionActive: boolean;
     isListening: boolean;
+    disabled?: boolean;
     onStartSession: () => void;
     onStopSession: () => void;
     onMicToggle: () => void;
@@ -13,6 +14,7 @@ interface Props {
 export const Controls: React.FC<Props> = ({ 
     sessionActive, 
     isListening, 
+    disabled,
     onStartSession, 
     onStopSession, 
     onMicToggle, 
@@ -21,7 +23,7 @@ export const Controls: React.FC<Props> = ({
     return (
         <div className="glass-panel controls-container">
             {!sessionActive ? (
-                <button className="btn-primary" onClick={onStartSession}>
+                <button className="btn-primary" onClick={onStartSession} disabled={disabled}>
                     Open Avatar Session
                 </button>
             ) : (
@@ -29,13 +31,14 @@ export const Controls: React.FC<Props> = ({
                     <button 
                         className={`btn-primary ${isListening ? 'btn-mic-active' : ''}`} 
                         onClick={onMicToggle}
+                        disabled={disabled}
                     >
                         {isListening ? 'Stop Microphone' : 'Start Microphone'}
                     </button>
-                    <button className="btn-primary btn-clear" onClick={onClearChat}>
+                    <button className="btn-primary btn-clear" onClick={onClearChat} disabled={disabled}>
                         Clear History
                     </button>
-                    <button className="btn-primary btn-close" onClick={onStopSession}>
+                    <button className="btn-primary btn-close" onClick={onStopSession} disabled={disabled}>
                         Close Session
                     </button>
                 </>

@@ -50,6 +50,9 @@ const flattenScript = (nodes: SessionPart[]): LessonAction[] => {
                 actions.push({ id: `${node.id}-outro`, type: ActionType.SPEAK, payload: node.outro, originalNodeId: node.id, originalPart: node });
             }
         }
+        if (node.wait) {
+            actions.push({ id: `${node.id}-wait`, type: ActionType.WAIT, payload: node.wait.toString(), originalNodeId: node.id, originalPart: node });
+        }
     });
     return actions;
 };
@@ -73,6 +76,11 @@ export const useLessonEngine = ({
     
     // Track execution to prevent duplicate calls
     const executionRef = useRef<number | null>(null);
+    const waitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const advance = useCallback(() => {
+        setCurrentIndex(prev => prev + 1);
+    }, []);
 
     useEffect(() => {
         const flat = flattenScript(script);
@@ -107,9 +115,18 @@ export const useLessonEngine = ({
         } else if (action.type === ActionType.VIDEO) {
              onVideoPlay(action.payload);
              // We DO NOT advance here. We wait for onVideoEnded callback.
+        } else if (action.type === ActionType.WAIT) {
+             const seconds = parseInt(action.payload) || 0;
+             console.log(`[useLessonEngine] Waiting for ${seconds} seconds...`);
+             if (waitTimeoutRef.current) clearTimeout(waitTimeoutRef.current);
+             waitTimeoutRef.current = setTimeout(() => {
+                 if (state === LessonState.RUNNING && executionRef.current === currentIndex) {
+                     advance();
+                 }
+             }, seconds * 1000);
         }
 
-    }, [actions, currentIndex, avatarService, onVideoPlay, onScriptComplete]);
+    }, [actions, currentIndex, avatarService, onVideoPlay, onScriptComplete, state, advance]);
 
     const startLesson = useCallback((startActionIndex: number = 0) => {
         console.log(`[useLessonEngine] startLesson called with startActionIndex: ${startActionIndex}`);
@@ -138,10 +155,6 @@ export const useLessonEngine = ({
         }
     }, [currentIndex, state, executeCurrentAction]);
 
-    const advance = useCallback(() => {
-        setCurrentIndex(prev => prev + 1);
-    }, []);
-
     const onAvatarSpeechEnded = useCallback(() => {
         if (state !== LessonState.RUNNING) {
              return;
@@ -166,6 +179,10 @@ export const useLessonEngine = ({
         // Interrupting puts us in WAITING state.
         // We stop speaking. The TalkingStopped event will fire but should be ignored by App.tsx logic because of this state.
         setState(LessonState.WAITING_FOR_INPUT);
+        if (waitTimeoutRef.current) {
+            clearTimeout(waitTimeoutRef.current);
+            waitTimeoutRef.current = null;
+        }
         await avatarService?.stopSpeaking();
     }, [avatarService]);
 
@@ -210,8 +227,18 @@ export const useLessonEngine = ({
 
     const pause = useCallback(async () => {
         setState(LessonState.PAUSED);
+        if (waitTimeoutRef.current) {
+            clearTimeout(waitTimeoutRef.current);
+            waitTimeoutRef.current = null;
+        }
         await avatarService?.stopSpeaking();
     }, [avatarService]);
+
+    useEffect(() => {
+        return () => {
+            if (waitTimeoutRef.current) clearTimeout(waitTimeoutRef.current);
+        };
+    }, []);
 
     return useMemo(() => ({
         state,

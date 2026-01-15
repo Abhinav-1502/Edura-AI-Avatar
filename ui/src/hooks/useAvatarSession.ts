@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { HeyGenService } from '../services/HeyGenService';
 import { ApiClient } from '../services/ApiClient';
 import { AvatarQuality, VoiceEmotion } from "@heygen/streaming-avatar";
@@ -38,7 +38,7 @@ export const useAvatarSession = () => {
                 avatarName: config.avatarCharacter,
                 voice: {
                     voiceId: config.ttsVoice,
-                    rate: 1.0,
+                    rate: 0.8,
                     emotion: VoiceEmotion.EXCITED,
                 },
                 language: 'en',
@@ -76,7 +76,8 @@ export const useAvatarSession = () => {
         }
     }, [avatarService]);
 
-    const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+    const recognitionRef = useRef<any>(null);
+    const isIntentionalStop = useRef(false);
 
     const startRecognition = useCallback(async (onRecognized: (text: string, isFinal: boolean) => void) => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -86,56 +87,73 @@ export const useAvatarSession = () => {
             return;
         }
 
+        // Cleanup existing instance if any
+        if (recognitionRef.current) {
+            isIntentionalStop.current = true;
+            recognitionRef.current.stop();
+        }
+
         const recognition = new SpeechRecognition();
-        recognition.continuous = true; // Keep listening until stopped
-        recognition.interimResults = true; // Enable partial results
-        recognition.lang = 'en-US';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US'; 
+        // Note: For better accuracy, ensure the lang matches the speaker.
+
+        isIntentionalStop.current = false;
 
         recognition.onresult = (event: any) => {
             let fullTranscript = '';
-            
+            // We can check event.resultIndex, but regenerating the whole string is safer for simple inputs.
             for (let i = 0; i < event.results.length; ++i) {
                 fullTranscript += event.results[i][0].transcript;
             }
 
-            // Check if errors or finality of last result matters, 
-            // but for 'current session text' we just send the whole thing.
-            // We pass false for isFinal usually unless strictly last? 
-            // Actually isFinal in callback was used to trigger auto-send.
-            // Since we are moving to manual, isFinal is less critical for control, 
-            // but good for UI knowledge.
-            // Let's rely on the last result's isFinal status for the flag.
             const isFinal = event.results[event.results.length - 1]?.isFinal || false;
             
             if (fullTranscript) {
+                 console.log("[STT] Recognized:", fullTranscript);
                  onRecognized(fullTranscript, isFinal);
             }
         };
 
         recognition.onerror = (event: any) => {
-            console.error("Speech recognition error", event.error);
+            console.warn("Speech recognition error:", event.error);
+            // 'no-speech' is common, we ignore it and let onend restart if needed.
+            // 'not-allowed' means permission denied.
             if (event.error === 'not-allowed') {
-                 alert("Microphone access denied.");
+                 isIntentionalStop.current = true; // Stop trying
+                 alert("Microphone access denied. Please allow microphone access.");
             }
         };
         
-        // Handle unexpected stop (e.g. silence timeout if not continuous, though explicit stop handles main case)
         recognition.onend = () => {
-             console.log("Speech recognition ended");
-             // If we wanted strictly continuous 'always on', we'd restart here unless manually stopped.
-             // But existing logic treats 'stop' as manual or managed by parent.
+             if (!isIntentionalStop.current) {
+                 console.log("Speech recognition ended unexpectedly (silence/network). Restarting...");
+                 try {
+                     recognition.start();
+                 } catch (e) {
+                     console.error("Failed to restart recognition:", e);
+                 }
+             } else {
+                 console.log("Speech recognition stopped intentionally.");
+             }
         };
 
-        recognition.start();
-        setRecognitionInstance(recognition);
+        try {
+            recognition.start();
+            recognitionRef.current = recognition;
+        } catch (e) {
+            console.error("Failed to start recognition:", e);
+        }
     }, []);
 
     const stopRecognition = useCallback(async () => {
-        if (recognitionInstance) {
-            recognitionInstance.stop();
-            setRecognitionInstance(null);
+        isIntentionalStop.current = true;
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            recognitionRef.current = null;
         }
-    }, [recognitionInstance]);
+    }, []);
 
     const stopSpeaking = useCallback(async () => {
         await avatarService.stopSpeaking();
