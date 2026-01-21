@@ -34,11 +34,11 @@ export const useAvatarSession = () => {
             await avatarService.initialize(token);
             
             await avatarService.startSession({
-                quality: AvatarQuality.Low,
+                quality: AvatarQuality.High,
                 avatarName: config.avatarCharacter,
                 voice: {
                     voiceId: config.ttsVoice,
-                    rate: 0.8,
+                    rate: 0.9,
                     emotion: VoiceEmotion.EXCITED,
                 },
                 language: 'en',

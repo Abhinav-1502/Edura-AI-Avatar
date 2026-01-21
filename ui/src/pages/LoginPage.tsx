@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiClient } from '../services/ApiClient';
-import '../styles/App.css'; // Reuse existing styles
+import '../styles/App.css'; 
 
 export const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -19,7 +20,6 @@ export const LoginPage: React.FC = () => {
             const response = await ApiClient.login(email, password);
             console.log("Login successful:", response);
             
-            // Save token and user info
             localStorage.setItem('auth_token', response.access_token);
             localStorage.setItem('user_info', JSON.stringify(response.user));
             
@@ -33,94 +33,68 @@ export const LoginPage: React.FC = () => {
     };
 
     return (
-        <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            height: '100vh', 
-            backgroundColor: '#0f172a',
-            color: 'white'
-        }}>
-            <div style={{
-                background: '#1e293b',
-                padding: '2rem',
-                borderRadius: '8px',
-                width: '100%',
-                maxWidth: '400px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+        <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <h1 style={{ 
+                fontSize: '3.5rem', 
+                fontWeight: '700', 
+                background: 'linear-gradient(to right, #fff, #999)', 
+                WebkitBackgroundClip: 'text', 
+                WebkitTextFillColor: 'transparent',
+                marginBottom: '40px',
+                textAlign: 'center',
+                letterSpacing: '-0.02em'
             }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: 'bold' }}>Teacher Login</h2>
+                Eng Campus Avatar Class
+            </h1>
+            <div className="config-box" style={{ width: '100%', margin: 0 }}>
+                <h2 className="app-header" style={{ marginBottom: '32px', fontSize: '1.25rem', opacity: 0.8 }}>Teacher Login</h2>
                 
                 {error && (
                     <div style={{ 
-                        backgroundColor: 'rgba(239, 68, 68, 0.2)', 
-                        color: '#fca5a5', 
-                        padding: '0.75rem', 
-                        borderRadius: '4px',
-                        marginBottom: '1rem',
-                        fontSize: '0.875rem'
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)', 
+                        color: '#f87171', 
+                        padding: '12px', 
+                        borderRadius: 'var(--radius-md)',
+                        marginBottom: '24px',
+                        fontSize: '0.9rem',
+                        border: '1px solid rgba(220, 38, 38, 0.2)'
                     }}>
                         {error}
                     </div>
                 )}
 
                 <form onSubmit={handleLogin}>
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Email</label>
+                    <div style={{ marginBottom: '20px' }}>
+                        <label className="label-text">Email</label>
                         <input
                             type="email"
+                            className="input-field"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                borderRadius: '4px',
-                                border: '1px solid #334155',
-                                backgroundColor: '#0f172a',
-                                color: 'white',
-                                outline: 'none'
-                            }}
-                            placeholder="Enter your email"
+                            placeholder="name@school.com"
                         />
                     </div>
 
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Password</label>
+                    <div style={{ marginBottom: '32px' }}>
+                        <label className="label-text">Password</label>
                         <input
                             type="password"
+                            className="input-field"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                borderRadius: '4px',
-                                border: '1px solid #334155',
-                                backgroundColor: '#0f172a',
-                                color: 'white',
-                                outline: 'none'
-                            }}
-                            placeholder="Enter your password"
+                            placeholder="••••••••"
                         />
                     </div>
 
                     <button
                         type="submit"
                         disabled={isLoading}
-                        style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontWeight: 'bold',
-                            cursor: isLoading ? 'not-allowed' : 'pointer',
-                            opacity: isLoading ? 0.7 : 1
-                        }}
+                        className="btn-primary"
+                        style={{ width: '100%' }}
                     >
-                        {isLoading ? 'Logging in...' : 'Sign In'}
+                        {isLoading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
             </div>
