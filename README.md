@@ -12,33 +12,7 @@ Edura-Avatar is an interactive educational platform featuring an AI-powered avat
 
 ## System Architecture
 
-```mermaid
-graph TD
-    subgraph Client [Frontend (React + Vite)]
-        UI[User Interface]
-        AvatarSDK[HeyGen Streaming SDK]
-    end
-
-    subgraph Server [Backend (FastAPI)]
-        API[Core API]
-        Routers[Routers: Chat, Topics, Sessions, Auth]
-        Static[Static Media Server]
-    end
-
-    subgraph External [External Services]
-        HeyGen[HeyGen API]
-        LLM[LLM Provider (e.g. OpenAI/Gemini)]
-    end
-
-    UI -->|HTTP Requests| API
-    UI -->|Media Files| Static
-    UI -->|Stream Video/Audio| AvatarSDK
-    
-    AvatarSDK <-->|WebRTC/WebSocket| HeyGen
-    
-    API -->|Auth/Token Generation| HeyGen
-    API -->|Context/Prompts| LLM
-```
+![System Design Architecture](Docs/assets/system_design.png)
 
 ## Tech Stack
 
