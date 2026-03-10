@@ -1,3 +1,4 @@
+
 export type SessionPartType = 'speech' | 'video';
 
 export interface BaseSessionPart {

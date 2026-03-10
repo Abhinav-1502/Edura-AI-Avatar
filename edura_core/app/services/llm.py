@@ -47,6 +47,7 @@ class OpenAILLMService(LLMService):
         
         # Format the system prompt
         formatted_prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context, question=question)
+        print(formatted_prompt)
 
         # Construct payload with single system message containing everything
         api_messages = [{"role": "system", "content": formatted_prompt}]

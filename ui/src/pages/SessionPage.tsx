@@ -226,7 +226,13 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
 
         // Inject Context
         const contextSlice = lessonEngine.getContextSlice();
-        const messageWithContext = `[SYSTEM CONTEXT: ${JSON.stringify(contextSlice)}]\n\nUser Question: ${text}`;
+        const title = sessionData?.title || sessionData?.subject || "this session";
+        const messageWithContext = `[SYSTEM CONTEXT:
+            Session Title: "${title}"
+            Script Context: ${JSON.stringify(contextSlice)}
+            ]
+
+            User Question: ${text}`;
         sendMessage(messageWithContext);
     };
 

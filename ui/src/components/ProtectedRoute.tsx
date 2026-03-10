@@ -3,7 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 export const ProtectedRoute: React.FC = () => {
     // Check for auth token in localStorage
-    const authToken = localStorage.getItem('auth_token');
+    const authToken = sessionStorage.getItem('auth_token');
 
     // If no token, redirect to login
     if (!authToken) {

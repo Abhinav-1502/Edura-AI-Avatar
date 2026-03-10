@@ -20,8 +20,8 @@ export const LoginPage: React.FC = () => {
             const response = await ApiClient.login(email, password);
             console.log("Login successful:", response);
             
-            localStorage.setItem('auth_token', response.access_token);
-            localStorage.setItem('user_info', JSON.stringify(response.user));
+            sessionStorage.setItem('auth_token', response.access_token);
+            sessionStorage.setItem('user_info', JSON.stringify(response.user));
             
             navigate('/');
         } catch (err: any) {
