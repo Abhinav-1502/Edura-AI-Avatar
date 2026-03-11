@@ -38,7 +38,7 @@ class ApiClientService {
     
     // However, the provided snippet makes getHeyGenToken and getSpeechToken static.
     // Let's make BASE_URL static to match the snippet's usage.
-    private BASE_URL = import.meta.env.BACKEND_URL || 'http://localhost:8000'; // Or set to window.location.origin if needed
+    public BASE_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.BACKEND_URL || 'http://localhost:8000';
 
     async getHeyGenToken(): Promise<string> {
         const response = await fetch(`${this.BASE_URL}/api/heygen/token`, { method: 'POST' });

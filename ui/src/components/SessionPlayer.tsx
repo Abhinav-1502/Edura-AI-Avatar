@@ -6,6 +6,7 @@ import { ChatInput } from './ChatInput';
 import { Controls } from './Controls';
 import { VideoPlayerOverlay } from './VideoPlayerOverlay';
 import type { Message } from '../services/ApiClient';
+import { ApiClient } from '../services/ApiClient';
 import type { SessionPart } from '../types/session';
 
 import '../styles/SessionPlayer.css';
@@ -68,7 +69,7 @@ export const SessionPlayer = ({
         if (path.startsWith('edura_core/app/data/')) {
             path = path.replace('edura_core/app/data/', '');
         }
-        videoSrc = `/api/media/${path}`;
+        videoSrc = `${ApiClient.BASE_URL}/api/media/${path}`;
     }
 
     // Auto-scroll to current script item
