@@ -1,0 +1,39 @@
+name: Deploy to Edura-AI-Avatar using main
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to hw VM
+        run: |
+          ssh ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} << 'EOF'
+            cd ~/repo/Edura-AI-Avatar || exit
+      
+            git fetch origin
+            git reset --hard origin/main
+      
+            echo "Restarting FastAPI..."
+            sudo systemctl restart fastapi
+      
+            echo "Reloading Nginx..."
+            sudo systemctl restart nginx
+      
+            echo "Deployment completed!"
+          EOF
