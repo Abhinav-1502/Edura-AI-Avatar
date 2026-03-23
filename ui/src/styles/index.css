@@ -2,20 +2,21 @@
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   
   /* Feature Colors */
-  --bg-color: #121212;
-  --surface-color: #1c1c1e;
-  --surface-border: rgba(255, 255, 255, 0.1);
+  --bg-color: #ffffff;
+  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e0f2f1 30%, #fbe9e7 70%, #fff9c4 100%);
+  --surface-color: rgba(255, 255, 255, 0.5);
+  --surface-border: rgba(0, 0, 0, 0.05);
   
-  --text-primary: #ffffff;
-  --text-secondary: #a1a1a1;
-  --text-tertiary: #6b6b6b;
+  --text-primary: #322321;
+  --text-secondary: #5d4037;
+  --text-tertiary: #8d6e63;
 
   --accent-color: #ffffff;
   --accent-text: #000000;
   
-  --glass-bg: rgba(28, 28, 30, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -28,7 +29,8 @@
 body {
   margin: 0;
   font-family: var(--font-family);
-  background-color: var(--bg-color);
+  background: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -74,8 +76,8 @@ button {
 }
 
 .btn-primary {
-  background-color: var(--accent-color);
-  color: var(--accent-text);
+  background-color: #4e342e;
+  color: #ffffff;
   padding: 12px 24px;
   border-radius: var(--radius-full);
   font-weight: 500;
@@ -121,4 +123,10 @@ button {
   margin-bottom: 8px;
   display: block;
   font-weight: 500;
+}
+
+.error {
+    color: #d32f2f;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
