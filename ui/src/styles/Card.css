@@ -1,36 +1,59 @@
 .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 30px;
+}
+
+@media (max-width: 1024px) {
+    .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 20px;
-    transition: transform 0.2s, background-color 0.2s;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    padding: 28px;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     cursor: pointer;
     text-decoration: none;
-    color: inherit;
-    display: block;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.03);
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-8px) scale(1.02);
+    background: rgba(255, 255, 255, 0.65);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
 }
 
 .card h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: #fff;
+    margin: 0;
+    color: #4e342e;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
 .card p {
-    color: #ccc;
-    font-size: 0.9rem;
-    margin: 5px 0;
+    color: #6d4c41;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.4;
 }
 
 .page-container {
@@ -40,8 +63,9 @@
 }
 
 .page-title {
-    margin-bottom: 30px;
-    font-weight: 300;
-    font-size: 2rem;
-    color: #fff;
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 2.5rem;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
 }

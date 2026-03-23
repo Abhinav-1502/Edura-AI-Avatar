@@ -20,7 +20,7 @@ export const HomePage: React.FC = () => {
             }
         };
         fetchSessions();
-     
+
         const getCredits = async () => {
             try {
                 const response = await ApiClient.getHeyGenCredits();
@@ -30,7 +30,7 @@ export const HomePage: React.FC = () => {
                 console.error("Failed to fetch credits", e);
             }
         };
-        
+
         getCredits();
     }, []);
 
@@ -65,7 +65,7 @@ export const HomePage: React.FC = () => {
         navigate(`/session/${sessionId}`, { state: { resumePartId, isTracking } });
     };
 
-    
+
     return (
         <div className="page-container">
             <h1 className="page-title">Available Sessions</h1>
@@ -73,12 +73,12 @@ export const HomePage: React.FC = () => {
                 {credits < 1 && <span className="error"> (You have no credits left. Please purchase more credits to continue.)</span>}
             </p>
             <div className="card-grid">
-                
-               
+
+
                 {sessions.map(session => (
-                    <div 
-                        key={session.id} 
-                        className="card" 
+                    <div
+                        key={session.id}
+                        className="card"
                         onClick={() => handleSessionClick(session.id)}
                         style={{ cursor: 'pointer' }}
                     >
