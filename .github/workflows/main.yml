@@ -28,6 +28,11 @@ jobs:
       
             git fetch origin
             git reset --hard origin/main
+
+            cd ui
+
+            npm install
+            npm run build
       
             echo "Restarting FastAPI..."
             sudo systemctl restart fastapi
