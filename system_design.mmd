@@ -1,0 +1,38 @@
+graph LR
+    %% Styling
+    classDef client fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+    classDef server fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#e65100;
+    classDef cloud fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c;
+    classDef data fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+
+    subgraph UserSpace ["💻 Client-Side Application"]
+        direction TB
+        UI["React Interface<br/>(Browser)"]:::client
+        SDK["HeyGen Streaming SDK<br/>(Video Player)"]:::client
+    end
+
+    subgraph Backend ["⚙️ Edura Core (Server)"]
+        direction TB
+        API["FastAPI Router"]:::server
+        Session["Session Manager"]:::server
+        Static["Static Media"]:::data
+    end
+
+    subgraph CloudServices ["☁️ External Cloud Services"]
+        direction TB
+        HeyGen["HeyGen API<br/>(Video Generation)"]:::cloud
+        LLM["LLM Provider<br/>(OpenAI / Gemini)"]:::cloud
+    end
+
+    %% Interactions
+    UI --> |"1. HTTP Request<br/>(Chat/Command)"| API
+    UI -.-> |"Load Assets"| Static
+    
+    API --> |"2. Process Context"| Session
+    Session <--> |"3. Inference"| LLM
+    
+    Session --> |"4. Send Text/Audio"| HeyGen
+    
+    HeyGen ==> |"5. Real-time Video Stream<br/>(WebRTC)"| SDK
+    
+
