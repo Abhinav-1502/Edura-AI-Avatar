@@ -16,21 +16,22 @@ export const Navbar: React.FC = () => {
             background: 'linear-gradient(135deg, #022b26 0%, #0a4d44 50%, #022b26 100%)',
             backdropFilter: 'blur(30px)',
             WebkitBackdropFilter: 'blur(30px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
+            borderBottom: '0px solid rgba(255, 255, 255, 0.15)',
             boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.25)',
             transition: 'all 0.3s ease',
-            padding: '1.2rem 2rem'
+            padding: '0rem 2rem',
+            paddingTop: '0.3rem',
         }}>
             <style>{`
                 .nav-link {
                     color: rgba(255, 255, 255, 0.89) !important;
-                    padding: 0.6rem 1.2rem !important;
                     border-radius: 10px !important;
                     transition: all 0.2s ease-in-out !important;
                     text-decoration: none !important;
                     display: inline-block !important;
                     cursor: pointer !important;
                     background: transparent !important;
+                    borderbottom: 0px;
                 }
                 .nav-link:hover {
                     background-color: rgba(255, 255, 255, 0.45) !important;
@@ -44,8 +45,8 @@ export const Navbar: React.FC = () => {
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
                 }
             `}</style>
-            <NavLink to="/" className="navbar-brand" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-                Edura Avatar
+            <NavLink to="/" className="navbar-brand-logo" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.2),padding:0px 0px' }}>
+                <img src="/logoeng.png" alt="Edura by Engcampus" style={{ height: '60px',width: '140px',background: 'white',padding: '0.35rem 0.7rem'}} />
             </NavLink>
             <div className="navbar-links">
                 <NavLink to="/" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
