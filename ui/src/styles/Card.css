@@ -18,8 +18,8 @@
 }
 
 .card {
-    background: #b5b1fa;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: #e9eff8;
+    border: 1px solid rgba(0, 35, 99, 0.15);
     border-radius: 20px;
     padding: 28px;
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -34,7 +34,7 @@
 
 .card:hover {
     transform: scale(1.02);
-    background:#b5b1fa;
+    background:#d3def1;
     box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
 }
 
