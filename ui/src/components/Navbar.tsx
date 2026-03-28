@@ -46,7 +46,7 @@ export const Navbar: React.FC = () => {
                 }
             `}</style>
             <NavLink to="/" className="navbar-brand-logo" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.2),padding:0px 0px' }}>
-                <img src="/logoeng.png" alt="Edura by Engcampus" style={{ height: '60px',width: '140px',background: 'white',padding: '0.35rem 0.7rem'}} />
+                <img src="/logoeng.png" alt="Edura by Engcampus" style={{ height: '60px',width: '100px',background: 'white',padding: '0.35rem 1.4rem'}} />
             </NavLink>
             <div className="navbar-links">
                 <NavLink to="/" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
