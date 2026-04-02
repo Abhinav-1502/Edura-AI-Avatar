@@ -10,6 +10,7 @@ export interface BaseSessionPart {
 export interface SpeechPart extends BaseSessionPart {
     type: 'speech';
     content: string;
+    audio?: string;
 }
 
 export interface VideoPart extends BaseSessionPart {
@@ -17,6 +18,8 @@ export interface VideoPart extends BaseSessionPart {
     path: string;
     intro: string;
     outro: string;
+    intro_audio?: string;
+    outro_audio?: string;
 }
 
 export type SessionPart = SpeechPart | VideoPart;

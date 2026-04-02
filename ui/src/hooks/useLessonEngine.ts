@@ -16,6 +16,7 @@ export interface LessonAction {
     id: string;
     type: ActionTypeEnum;
     payload: string;
+    cachedAudioPath?: string;
     originalNodeId: number;
     originalPart: SessionPart;
 }
@@ -41,14 +42,14 @@ const flattenScript = (nodes: SessionPart[]): LessonAction[] => {
     const actions: LessonAction[] = [];
     nodes.forEach(node => {
         if (node.type === 'speech') {
-            actions.push({ id: `${node.id}-speech`, type: ActionType.SPEAK, payload: node.content, originalNodeId: node.id, originalPart: node });
+            actions.push({ id: `${node.id}-speech`, type: ActionType.SPEAK, payload: node.content, cachedAudioPath: node.audio, originalNodeId: node.id, originalPart: node });
         } else if (node.type === 'video') {
             if (node.intro) {
-                actions.push({ id: `${node.id}-intro`, type: ActionType.SPEAK, payload: node.intro, originalNodeId: node.id, originalPart: node });
+                actions.push({ id: `${node.id}-intro`, type: ActionType.SPEAK, payload: node.intro, cachedAudioPath: node.intro_audio, originalNodeId: node.id, originalPart: node });
             }
             actions.push({ id: `${node.id}-video`, type: ActionType.VIDEO, payload: node.path, originalNodeId: node.id, originalPart: node });
             if (node.outro) {
-                actions.push({ id: `${node.id}-outro`, type: ActionType.SPEAK, payload: node.outro, originalNodeId: node.id, originalPart: node });
+                actions.push({ id: `${node.id}-outro`, type: ActionType.SPEAK, payload: node.outro, cachedAudioPath: node.outro_audio, originalNodeId: node.id, originalPart: node });
             }
         }
         if (node.wait) {
@@ -107,9 +108,16 @@ export const useLessonEngine = ({
 
         if (action.type === ActionType.SPEAK) {
              try {
-                // LITE mode: convert text → ElevenLabs PCM (base64) then send audio to avatar
-                console.log('[useLessonEngine] Fetching TTS for:', action.payload.substring(0, 60) + '...');
-                const audioBase64 = await ApiClient.getTtsAudio(action.payload);
+                let audioBase64: string;
+                if (action.cachedAudioPath) {
+                    // Use pre-generated audio — no TTS API call needed
+                    console.log('[useLessonEngine] Using cached audio:', action.cachedAudioPath);
+                    audioBase64 = await ApiClient.getCachedAudio(action.cachedAudioPath);
+                } else {
+                    // Fallback to real-time TTS (Q&A, dynamic content)
+                    console.log('[useLessonEngine] Fetching live TTS for:', action.payload.substring(0, 60) + '...');
+                    audioBase64 = await ApiClient.getTtsAudio(action.payload);
+                }
                 await avatarService.speak(audioBase64);
                 // We DO NOT advance here. We wait for 'avatar_stop_talking' event.
              } catch(e) {

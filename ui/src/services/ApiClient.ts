@@ -66,6 +66,17 @@ class ApiClientService {
         return json.audio_base64 as string;
     }
 
+    async getCachedAudio(path: string): Promise<string> {
+        const response = await fetch(`${this.BASE_URL}/api/heygen/cached_audio`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path }),
+        });
+        if (!response.ok) throw new Error('Failed to get cached audio');
+        const json = await response.json();
+        return json.audio_base64 as string;
+    }
+
     async getHeyGenCredits(): Promise<any> {
         const response = await fetch(`${this.BASE_URL}/api/heygen/available_credits`);
         if (!response.ok) throw new Error('Failed to get HeyGen available credits');

@@ -1,3 +1,5 @@
+import base64
+import os
 import requests
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -7,6 +9,7 @@ from app.services.tts import synthesize_base64_pcm
 router = APIRouter()
 
 LIVEAVATAR_API_URL = "https://api.liveavatar.com"
+SANDBOX_AVATAR_ID = "dd73ea75-1218-4ef3-92ce-606d5f7fbc0a"  # Wayne (sandbox only)
 
 # In-memory store: session_id -> session_token (used for stop_all_sessions)
 _active_sessions: dict = {}
@@ -24,10 +27,13 @@ async def get_heygen_token():
 
     # LITE mode: we supply our own TTS audio (ElevenLabs).
     # No avatar_persona / voice_id needed — LiveAvatar only renders video.
+    avatar_id = SANDBOX_AVATAR_ID if settings.LIVEAVATAR_SANDBOX else settings.LIVEAVATAR_AVATAR_ID
     body = {
         "mode": "LITE",
-        "avatar_id": settings.LIVEAVATAR_AVATAR_ID,
+        "avatar_id": avatar_id,
     }
+    if settings.LIVEAVATAR_SANDBOX:
+        body["is_sandbox"] = True
 
     try:
         response = requests.post(
@@ -55,7 +61,7 @@ class TtsRequest(BaseModel):
 @router.post("/heygen/tts")
 async def text_to_speech(body: TtsRequest):
     """
-    ElevenLabs TTS endpoint for LiveAvatar LITE mode.
+    Sarvam AI TTS endpoint for LiveAvatar LITE mode.
     Returns base64-encoded raw PCM 16-bit 24kHz mono audio.
     Frontend sends this audio to LiveAvatar via agent.speak WebSocket command.
     """
@@ -68,6 +74,28 @@ async def text_to_speech(body: TtsRequest):
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"TTS failed: {str(e)}")
+
+
+class CachedAudioRequest(BaseModel):
+    path: str
+
+
+@router.post("/heygen/cached_audio")
+async def get_cached_audio(body: CachedAudioRequest):
+    """
+    Serve pre-generated PCM audio as base64.
+    The path comes from the script JSON's audio/intro_audio/outro_audio fields.
+    """
+    if not body.path:
+        raise HTTPException(status_code=400, detail="path is required")
+
+    if not os.path.isfile(body.path):
+        raise HTTPException(status_code=404, detail=f"Audio file not found: {body.path}")
+
+    with open(body.path, "rb") as f:
+        pcm_bytes = f.read()
+
+    return {"audio_base64": base64.b64encode(pcm_bytes).decode("utf-8")}
 
 
 @router.get("/heygen/avatar_list")
@@ -125,61 +153,30 @@ async def stop_all_sessions():
 async def get_mode():
     """
     Diagnostic endpoint — confirms which LiveAvatar mode is configured.
-    LITE mode: this backend provides TTS audio (ElevenLabs), LiveAvatar renders video only.
-    FULL mode: LiveAvatar handles TTS internally.
+    LITE mode: this backend provides TTS audio (Sarvam AI), LiveAvatar renders video only.
     """
-    elevenlabs_configured = bool(
-        settings.ELEVENLABS_API_KEY and
-        settings.ELEVENLABS_VOICE_ID
-    )
+    sarvam_configured = bool(settings.SARVAM_API_KEY)
+    avatar_id = SANDBOX_AVATAR_ID if settings.LIVEAVATAR_SANDBOX else settings.LIVEAVATAR_AVATAR_ID
     return {
         "mode": "LITE",
-        "avatar_id": settings.LIVEAVATAR_AVATAR_ID,
-        "tts_provider": "ElevenLabs" if elevenlabs_configured else "NOT CONFIGURED",
-        "tts_model": settings.ELEVENLABS_MODEL_ID,
-        "elevenlabs_configured": elevenlabs_configured,
-        "avatar_persona_voice": None,  # Not used in LITE mode — we send PCM audio directly
+        "sandbox": settings.LIVEAVATAR_SANDBOX,
+        "avatar_id": avatar_id,
+        "tts_provider": "Sarvam AI" if sarvam_configured else "NOT CONFIGURED",
+        "tts_speaker": settings.SARVAM_SPEAKER,
+        "tts_model": settings.SARVAM_MODEL,
     }
 
 
 @router.get("/heygen/available_credits")
 async def get_credits():
+    if settings.LIVEAVATAR_SANDBOX:
+        return {"data": {"credits_left": "999.00"}}
     try:
         # LiveAvatar credits
         la_headers = {"X-API-KEY": settings.LIVEAVATAR_API_KEY}
         la_resp = requests.get(f"{LIVEAVATAR_API_URL}/v1/users/credits", headers=la_headers)
         la_resp.raise_for_status()
         result = la_resp.json()
-
-        # ElevenLabs character usage (developer visibility only — not shown in frontend UI)
-        el_credits: dict = {}
-        if settings.ELEVENLABS_API_KEY:
-            try:
-                el_resp = requests.get(
-                    "https://api.elevenlabs.io/v1/user/subscription",
-                    headers={"xi-api-key": settings.ELEVENLABS_API_KEY},
-                    timeout=5,
-                )
-                if el_resp.status_code == 200:
-                    sub = el_resp.json()
-                    el_credits = {
-                        "character_count": sub.get("character_count"),
-                        "character_limit": sub.get("character_limit"),
-                        "characters_remaining": (
-                            sub.get("character_limit", 0) - sub.get("character_count", 0)
-                        ),
-                        "tier": sub.get("tier"),
-                    }
-                else:
-                    el_credits = {"error": f"ElevenLabs returned {el_resp.status_code}"}
-            except Exception as el_err:
-                el_credits = {"error": str(el_err)}
-
-        # Merge ElevenLabs info into the response payload
-        if isinstance(result.get("data"), dict):
-            result["data"]["elevenlabs"] = el_credits
-        else:
-            result["elevenlabs"] = el_credits
 
         return result
     except Exception as e:

@@ -72,8 +72,9 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
         script: sessionData?.script || EMPTY_SCRIPT,
         avatarService: avatarService, 
         onVideoPlay: async () => {
-             console.log("SessionPage: Video started. Disconnecting avatar to save costs.");
-             await stopSession();
+             // Keep LiveAvatar session alive during video playback to avoid
+             // burning 1 credit per session start. The session idles cheaply.
+             console.log("SessionPage: Video started. Keeping avatar session alive.");
         },
 
         // ON Successful Lesson Completion POST HOMEWORK
@@ -240,14 +241,9 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
     };
 
     const handleVideoEnded = async () => {
-        console.log("App: Video ended. Reconnecting avatar...");
-        try {
-            await startSession(config);
-            console.log("App: Avatar reconnected. Resuming lesson.");
-            lessonEngine.onVideoEnded();
-        } catch (e) {
-            console.error("Failed to restart avatar after video:", e);
-        }
+        // Session stays alive — just advance the lesson engine
+        console.log("SessionPage: Video ended. Resuming lesson (session still active).");
+        lessonEngine.onVideoEnded();
     };
 
     const initializationStarted = useRef(false);
