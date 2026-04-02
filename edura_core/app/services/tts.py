@@ -9,7 +9,7 @@ import requests
 from app.core.config import settings
 
 SARVAM_TTS_URL = "https://api.sarvam.ai/text-to-speech"
-MAX_CHARS_PER_REQUEST = 2500  # Sarvam v3 limit
+MAX_CHARS_PER_REQUEST = 500  # Sarvam v3 limit per input string
 
 
 def synthesize_base64_pcm(text: str) -> str:
@@ -44,7 +44,9 @@ def synthesize_base64_pcm(text: str) -> str:
             },
             timeout=30,
         )
-        resp.raise_for_status()
+        if not resp.ok:
+            print(f"[TTS] Sarvam API error {resp.status_code}: {resp.text}")
+            resp.raise_for_status()
         data = resp.json()
         audio_b64 = data["audios"][0]
         all_audio_b64_parts.append(audio_b64)
