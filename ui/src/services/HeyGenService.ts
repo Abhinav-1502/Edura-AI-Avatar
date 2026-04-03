@@ -204,6 +204,8 @@ export class HeyGenService {
 
     // ── speak: sends base64 PCM audio via WebSocket (LITE mode) ─────────────
     // base64Audio should be raw PCM 16-bit 24kHz mono, base64-encoded.
+    // Audio is sent in chunks to stay under the server's WS message size limit.
+    // (A single large message causes a 1006 close on the server side.)
     async speak(base64Audio: string): Promise<void> {
         if (!this.ws || !this.wsReady) {
             console.error(
@@ -217,10 +219,23 @@ export class HeyGenService {
             this.wsReady = false;
             return;
         }
+
+        // Decode → chunk → re-encode. 48 000 bytes ≈ 1 s of 24 kHz 16-bit mono PCM.
+        // Keeping chunks at ~48 KB PCM (~64 KB base64) stays well under any WS frame limit.
+        const PCM_CHUNK_BYTES = 48_000;
+        const pcm = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0));
+        const totalChunks = Math.ceil(pcm.length / PCM_CHUNK_BYTES);
+
+        for (let i = 0; i < totalChunks; i++) {
+            const slice = pcm.slice(i * PCM_CHUNK_BYTES, (i + 1) * PCM_CHUNK_BYTES);
+            let binary = '';
+            for (let j = 0; j < slice.length; j++) binary += String.fromCharCode(slice[j]);
+            this.ws.send(JSON.stringify({ type: 'agent.speak', audio: btoa(binary) }));
+        }
+
         const eventId = crypto.randomUUID();
-        this.ws.send(JSON.stringify({ type: 'agent.speak', audio: base64Audio }));
         this.ws.send(JSON.stringify({ type: 'agent.speak_end', event_id: eventId }));
-        console.log('[HeyGenService] Sent agent.speak + agent.speak_end  event_id=' + eventId);
+        console.log(`[HeyGenService] Sent ${totalChunks} agent.speak chunk(s) + agent.speak_end  event_id=${eventId}`);
     }
 
     async stopSpeaking(): Promise<void> {
