@@ -18,6 +18,7 @@ export class HeyGenService {
     private wsUrl: string | null = null;
     private mediaStream: MediaStream | null = null;
     private wsReady = false;
+    private keepAliveInterval: ReturnType<typeof setInterval> | null = null;
 
     // Callbacks
     public onAvatarStartTalking?: (headId: number) => void;
@@ -128,6 +129,17 @@ export class HeyGenService {
                 console.log('[HeyGenService][LITE] WebSocket connected ✅ — ready to send audio');
                 this.wsReady = true;
                 clearTimeout(timeout);
+
+                // Send session.keep_alive every 60s to prevent the 5-minute idle timeout.
+                // Documented in LiveAvatar LITE Mode events spec.
+                if (this.keepAliveInterval) clearInterval(this.keepAliveInterval);
+                this.keepAliveInterval = setInterval(() => {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'session.keep_alive', event_id: crypto.randomUUID() }));
+                        console.log('[HeyGenService] Sent session.keep_alive');
+                    }
+                }, 60_000);
+
                 resolve();
             };
 
@@ -156,6 +168,10 @@ export class HeyGenService {
             ws.onclose = (evt) => {
                 console.warn('[HeyGenService] WebSocket closed:', evt.code, evt.reason);
                 this.wsReady = false;
+                if (this.keepAliveInterval) {
+                    clearInterval(this.keepAliveInterval);
+                    this.keepAliveInterval = null;
+                }
                 if (this.onDisconnected) this.onDisconnected();
             };
         });
@@ -238,6 +254,11 @@ export class HeyGenService {
             } catch (e) {
                 console.warn('[HeyGenService] Failed to stop session on server:', e);
             }
+        }
+
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+            this.keepAliveInterval = null;
         }
 
         if (this.ws) {
