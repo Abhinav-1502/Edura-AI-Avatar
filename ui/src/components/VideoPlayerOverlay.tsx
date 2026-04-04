@@ -30,12 +30,13 @@ export const VideoPlayerOverlay: React.FC<Props> = ({ src, onEnded }) => {
     return (
         <div className="video-overlay-container">
             {!error ? (
-                <video 
+                <video
                     ref={videoRef}
-                    src={src} 
+                    src={src}
                     className="overlay-video"
                     onEnded={onEnded}
                     controls
+                    playsInline
                 />
             ) : (
                 <div className="error-container">
