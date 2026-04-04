@@ -17,7 +17,7 @@ import time
 # Ensure imports work from edura_core/
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-from app.services.tts import synthesize_base64_pcm
+from app.services.tts_elevenlabs import synthesize_base64_pcm
 
 DATA_DIR = "app/data"
 AUDIO_DIR = os.path.join(DATA_DIR, "audio")

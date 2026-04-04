@@ -4,7 +4,7 @@ import requests
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.core.config import settings
-from app.services.tts import synthesize_base64_pcm
+from app.services.tts_elevenlabs import synthesize_base64_pcm
 
 router = APIRouter()
 

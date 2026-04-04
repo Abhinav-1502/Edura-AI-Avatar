@@ -17,6 +17,10 @@ class Settings:
     SARVAM_SPEAKER = os.getenv("SARVAM_SPEAKER", "simran").lower()
     SARVAM_MODEL = os.getenv("SARVAM_MODEL", "bulbul:v3")
 
+    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+    ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
+    ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_turbo_v2_5")
+
     HW_API_KEY = os.getenv("HW_SERVER_API_KEY")
     HW_API_URL = os.getenv("HW_API_URL", "").replace("localhost", "host.docker.internal")
 
