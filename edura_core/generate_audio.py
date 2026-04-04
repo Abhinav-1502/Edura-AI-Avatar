@@ -6,9 +6,11 @@ saves PCM files to app/data/audio/<session_id>/, and updates the script JSON wit
 
 Usage:
     cd edura_core
-    python generate_audio.py
+    python generate_audio.py           # skip existing files
+    python generate_audio.py --fresh   # regenerate all, replacing cached
 """
 
+import argparse
 import json
 import os
 import base64
@@ -16,6 +18,10 @@ import time
 
 # Ensure imports work from edura_core/
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--fresh", action="store_true", help="Regenerate all audio, replacing cached files")
+args = parser.parse_args()
 
 from app.services.tts_elevenlabs import synthesize_base64_pcm
 
@@ -37,7 +43,7 @@ def save_json(path, data):
 
 def generate_and_save(text: str, out_path: str) -> str:
     """Synthesize TTS and save the raw PCM bytes to a file. Returns the relative path."""
-    if os.path.exists(out_path):
+    if os.path.exists(out_path) and not args.fresh:
         print(f"  SKIP (exists): {out_path}")
         return out_path
 
