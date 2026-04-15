@@ -166,7 +166,7 @@ export const SessionPage: React.FC<SessionPageProps> = ({ config }) => {
              }
          }
 
-         if (eventType === 'TalkingStopped' || eventType === 'SwitchToIdle' || eventType === 'avatar_stop_talking') {
+         if (eventType === 'TalkingStopped' || eventType === 'SwitchToIdle' || eventType === 'avatar_stop_talking' || eventType === 'agent.speak_ended' || eventType === 'avatar.speak_ended') {
               if (isPlayingResumeIntro) {
                   console.log("Resume intro finished");
                   setIsPlayingResumeIntro(false);
