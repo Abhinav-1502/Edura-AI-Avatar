@@ -80,6 +80,9 @@ export const useLessonEngine = ({
     const executionRef = useRef<number | null>(null);
     const waitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Prefetch: cache for the next SPEAK action's audio
+    const prefetchCacheRef = useRef<{ actionId: string; promise: Promise<string> } | null>(null);
+
     const advance = useCallback(() => {
         setCurrentIndex(prev => prev + 1);
     }, []);
@@ -91,6 +94,31 @@ export const useLessonEngine = ({
         setState(LessonState.IDLE);
     }, [script]);
 
+    // Fetch audio for a given action (cached path or live TTS)
+    const fetchAudioForAction = useCallback((action: LessonAction): Promise<string> => {
+        if (action.cachedAudioPath) {
+            return ApiClient.getCachedAudio(action.cachedAudioPath);
+        }
+        return ApiClient.getTtsAudio(action.payload);
+    }, []);
+
+    // Kick off a prefetch for the next SPEAK action after `fromIndex`
+    const prefetchNext = useCallback((fromIndex: number) => {
+        for (let i = fromIndex + 1; i < actions.length; i++) {
+            if (actions[i].type === ActionType.SPEAK) {
+                const next = actions[i];
+                // Don't re-prefetch if already cached for this action
+                if (prefetchCacheRef.current?.actionId === next.id) return;
+                console.log('[useLessonEngine] Prefetching audio for next SPEAK:', next.payload.substring(0, 60) + '...');
+                prefetchCacheRef.current = {
+                    actionId: next.id,
+                    promise: fetchAudioForAction(next),
+                };
+                return;
+            }
+        }
+    }, [actions, fetchAudioForAction]);
+
     const executeCurrentAction = useCallback(async () => {
         if (!avatarService || currentIndex >= actions.length) {
             if (currentIndex >= actions.length && actions.length > 0) {
@@ -101,7 +129,7 @@ export const useLessonEngine = ({
         }
 
         const action = actions[currentIndex];
-        
+
         // Prevent double execution of same index
         if (executionRef.current === currentIndex) return;
         executionRef.current = currentIndex;
@@ -109,16 +137,28 @@ export const useLessonEngine = ({
         if (action.type === ActionType.SPEAK) {
              try {
                 let audioBase64: string;
-                if (action.cachedAudioPath) {
-                    // Use pre-generated audio — no TTS API call needed
-                    console.log('[useLessonEngine] Using cached audio:', action.cachedAudioPath);
-                    audioBase64 = await ApiClient.getCachedAudio(action.cachedAudioPath);
+
+                // Check prefetch cache first
+                if (prefetchCacheRef.current?.actionId === action.id) {
+                    console.log('[useLessonEngine] Prefetch HIT for:', action.payload.substring(0, 60) + '...');
+                    audioBase64 = await prefetchCacheRef.current.promise;
+                    prefetchCacheRef.current = null;
                 } else {
-                    // Fallback to real-time TTS (Q&A, dynamic content)
-                    console.log('[useLessonEngine] Fetching live TTS for:', action.payload.substring(0, 60) + '...');
-                    audioBase64 = await ApiClient.getTtsAudio(action.payload);
+                    // No prefetch available — fetch now
+                    prefetchCacheRef.current = null;
+                    if (action.cachedAudioPath) {
+                        console.log('[useLessonEngine] Using cached audio:', action.cachedAudioPath);
+                    } else {
+                        console.log('[useLessonEngine] Fetching live TTS for:', action.payload.substring(0, 60) + '...');
+                    }
+                    audioBase64 = await fetchAudioForAction(action);
                 }
+
                 await avatarService.speak(audioBase64);
+
+                // While avatar speaks this chunk, prefetch the next SPEAK action's audio
+                prefetchNext(currentIndex);
+
                 // We DO NOT advance here. We wait for 'avatar_stop_talking' event.
              } catch(e) {
                  console.error("Speak failed", e);
@@ -190,6 +230,7 @@ export const useLessonEngine = ({
         // Interrupting puts us in WAITING state.
         // We stop speaking. The TalkingStopped event will fire but should be ignored by App.tsx logic because of this state.
         setState(LessonState.WAITING_FOR_INPUT);
+        prefetchCacheRef.current = null;
         if (waitTimeoutRef.current) {
             clearTimeout(waitTimeoutRef.current);
             waitTimeoutRef.current = null;
@@ -238,6 +279,7 @@ export const useLessonEngine = ({
 
     const pause = useCallback(async () => {
         setState(LessonState.PAUSED);
+        prefetchCacheRef.current = null;
         if (waitTimeoutRef.current) {
             clearTimeout(waitTimeoutRef.current);
             waitTimeoutRef.current = null;

@@ -10,6 +10,8 @@ SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.json")
 SESSION_CHAPTER_MAP = {
     "prepositions_1001": 1,
     "nouns_1001": 2,
+    "Intro_1003":1,
+    "New_prepositions_1004":1
 }
 
 def load_json(filepath):
